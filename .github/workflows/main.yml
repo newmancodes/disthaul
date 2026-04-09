@@ -12,18 +12,14 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # 6.0.2
 
-            - name: Set up Node.js
-              uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # 6.3.0
+            - name: Set up .NET
+              uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # 5.2.0
               with:
-                node-version: '24.x'
+                dotnet-version: 10.x
 
             - name: Set up Aspire
               run: |
                 curl -sSL https://aspire.dev/install.sh | bash
               shell: bash
 
-            - name: Install Node Dependencis
-              run: |
-                npm ci
-              shell: bash
               
