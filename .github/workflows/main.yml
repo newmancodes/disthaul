@@ -4,9 +4,20 @@ on:
     push:
         branches: [ main ]
 
+concurrency:
+    group: ${{ github.workflow }}
+    cancel-in-progress: false
+
+env:
+    CARGO_TERM_COLOR: always
+
 jobs:
     build-and-test:
         runs-on: ubuntu-latest
+
+        permissions:
+            id-token: write
+            contents: read
 
         steps:
             - name: Checkout code
@@ -17,9 +28,38 @@ jobs:
               with:
                 dotnet-version: 10.x
 
-            - name: Set up Aspire
+            - name: Configure WASM tooling
               run: |
-                curl -sSL https://aspire.dev/install.sh | bash
+                rustup target add wasm32-unknown-unknown
+                rustup component add llvm-tools-preview
+                cargo install trunk wasm-bindgen-cli cargo-llvm-cov
               shell: bash
+              
+            - name: Set up Aspire
+              run: curl -sSL https://aspire.dev/install.sh | bash
+              shell: bash
+
+            - name: Quality - Code Formatting
+              run: cargo fmt --check
+              shell: bash
+              working-directory: ui
+
+            - name: Quality - Unit Tests with Coverage
+              run: cargo llvm-cov --html
+              shell: bash
+              working-directory: ui
+
+            - name: Upload Code Coverage Report
+              if: always()
+              uses: actions/upload-artifact@v7
+              with:
+                name: code-coverage-report
+                path: ui/target/llvm-cov/html/
+                retention-days: 30
+
+            - name: Build Application
+              run: trunk build --release
+              shell: bash
+              working-directory: ui
 
               
