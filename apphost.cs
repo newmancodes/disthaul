@@ -22,7 +22,8 @@ var clientManagementDatabase = postgres.AddDatabase("client-management");
 
 var clientManagementApi = builder
     .AddExecutable("client-management-api", "cargo", "./client-management", "run", "--package", "api")
-    .WithHttpEndpoint(name: "http", env: "PORT")
+    .WithHttpEndpoint(name: "http", env: "SERVER__PORT")
+    .WithHttpHealthCheck("/health")
     .WithOtlpExporter()
     .WithReference(kafka)
     .WithReference(keycloak)
@@ -30,7 +31,7 @@ var clientManagementApi = builder
     .WithReference(redis)
     .WaitFor(kafka)
     .WaitFor(keycloak)
-    .WaitFor(postgres)
+    .WaitFor(clientManagementDatabase)
     .WaitFor(redis);
 
 var ui = builder
@@ -45,7 +46,7 @@ var ui = builder
     })
     .WithOtlpExporter()
     .WithReference(keycloak)
-    .WithEnvironment("CLIENT_MANAGEMENT_API_URL", clientManagementApi.GetEndpoint("http"))
+    .WithEnvironment("CLIENT_MANAGEMENT_API_URL", clientManagementApi.GetEndpoint("http")) // TODO: Use https when client management API supports it
     .WaitFor(keycloak)
     .WaitFor(clientManagementApi);
 
