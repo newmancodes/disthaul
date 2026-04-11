@@ -30,12 +30,6 @@ jobs:
                   components: rustfmt, clippy
                   targets: wasm32-unknown-unknown
 
-            - name: Cache Rust compilation
-              uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
-              with:
-                  workspaces: ui -> target
-                  cache-on-failure: true
-
             - name: Install cargo-binstall
               uses: cargo-bins/cargo-binstall@0b24824336e2b3800b0f89d9e08b2c08bfa3dcdd # v1.17.9
 
@@ -46,6 +40,12 @@ jobs:
             - name: Install llvm-tools-preview
               run: rustup component add llvm-tools-preview
               shell: bash
+
+            - name: Cache Rust compilation
+              uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+              with:
+                  workspaces: ui -> target
+                  cache-on-failure: true
 
             - name: Quality - Code Formatting
               run: cargo fmt --check
@@ -101,12 +101,6 @@ jobs:
                   toolchain: stable
                   components: rustfmt, clippy
 
-            - name: Cache Rust compilation
-              uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
-              with:
-                  workspaces: client-management -> target
-                  cache-on-failure: true
-
             - name: Install cargo-binstall
               uses: cargo-bins/cargo-binstall@0b24824336e2b3800b0f89d9e08b2c08bfa3dcdd # v1.17.9
 
@@ -117,6 +111,12 @@ jobs:
             - name: Install llvm-tools-preview
               run: rustup component add llvm-tools-preview
               shell: bash
+
+            - name: Cache Rust compilation
+              uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+              with:
+                  workspaces: client-management -> target
+                  cache-on-failure: true
 
             - name: Quality - Code Formatting
               run: cargo fmt --check
