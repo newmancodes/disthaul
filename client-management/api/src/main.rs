@@ -24,7 +24,7 @@ async fn main() -> Result<()> {
 
     let settings = Settings::load().context("Failed to load configuration")?;
 
-    let telemetry_guard = telemetry::init_telemetry(&settings.tls.certificate_path)
+    let telemetry_guard = telemetry::init_telemetry(&settings.tls)
         .context("Failed to initialise telemetry")?;
 
     let app = Router::new()

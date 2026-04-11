@@ -16,6 +16,8 @@ use tracing_subscriber::EnvFilter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
+use crate::config::TlsSettings;
+
 /// Holds the OTEL providers so they can be shut down gracefully.
 pub struct TelemetryGuard {
     tracer_provider: SdkTracerProvider,
@@ -57,8 +59,8 @@ impl TelemetryGuard {
 /// OTLP export still initialises but targets the SDK default endpoint
 /// (`https://localhost:4317`). The `fmt` layer always provides local stdout
 /// logging regardless.
-pub fn init_telemetry(tls_cert_path: &str) -> Result<TelemetryGuard> {
-    let tls_config = build_tls_config(tls_cert_path)?;
+pub fn init_telemetry(tls_settings: &TlsSettings) -> Result<TelemetryGuard> {
+    let tls_config = build_tls_config(tls_settings)?;
 
     // --- Traces ---
     let span_exporter = SpanExporter::builder()
@@ -133,9 +135,9 @@ pub fn init_telemetry(tls_cert_path: &str) -> Result<TelemetryGuard> {
 /// API server and the OTLP collector endpoint. Adding this certificate as a
 /// trusted CA root allows tonic/rustls to complete the TLS handshake with the
 /// Aspire dashboard's gRPC OTLP endpoint.
-fn build_tls_config(cert_path: &str) -> Result<ClientTlsConfig> {
-    let pem = std::fs::read(Path::new(cert_path))
-        .with_context(|| format!("Failed to read TLS certificate from {cert_path}"))?;
+fn build_tls_config(tls_settings: &TlsSettings) -> Result<ClientTlsConfig> {
+    let pem = std::fs::read(Path::new(&tls_settings.certificate_path))
+        .with_context(|| format!("Failed to read TLS certificate from {}", tls_settings.certificate_path))?;
 
     let tls_config = ClientTlsConfig::new().ca_certificate(Certificate::from_pem(pem));
 
