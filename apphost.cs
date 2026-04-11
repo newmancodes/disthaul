@@ -22,8 +22,15 @@ var clientManagementDatabase = postgres.AddDatabase("client-management");
 
 var clientManagementApi = builder
     .AddExecutable("client-management-api", "cargo", "./client-management", "run", "--package", "api")
-    .WithHttpEndpoint(name: "http", env: "SERVER__PORT")
-    .WithHttpHealthCheck("/health")
+    .WithHttpsEndpoint(name: "https", env: "SERVER__PORT")
+    .WithHttpsDeveloperCertificate()
+    .WithHttpsCertificateConfiguration(ctx =>
+    {
+        ctx.EnvironmentVariables["TLS__CERTIFICATE_PATH"] = ctx.CertificatePath;
+        ctx.EnvironmentVariables["TLS__CERTIFICATE_KEY_PATH"] = ctx.KeyPath;
+        return Task.CompletedTask;
+    })
+    .WithHttpHealthCheck("/health", endpointName: "https")
     .WithOtlpExporter()
     .WithReference(kafka)
     .WithReference(keycloak)
@@ -46,7 +53,7 @@ var ui = builder
     })
     .WithOtlpExporter()
     .WithReference(keycloak)
-    .WithEnvironment("CLIENT_MANAGEMENT_API_URL", clientManagementApi.GetEndpoint("http")) // TODO: Use https when client management API supports it
+    .WithEnvironment("CLIENT_MANAGEMENT_API_URL", clientManagementApi.GetEndpoint("https"))
     .WaitFor(keycloak)
     .WaitFor(clientManagementApi);
 

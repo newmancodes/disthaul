@@ -1,2 +1,6 @@
 [server]
 port = 8080
+
+[tls]
+certificate_path = "path/to/certificate"
+certificate_key_path = "path/to/certificate_key"

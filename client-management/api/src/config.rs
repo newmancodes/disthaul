@@ -4,11 +4,18 @@ use serde::Deserialize;
 #[derive(Debug, Deserialize)]
 pub struct Settings {
     pub server: ServerSettings,
+    pub tls: TlsSettings,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct ServerSettings {
     pub port: u16,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct TlsSettings {
+    pub certificate_path: String,
+    pub certificate_key_path: String,
 }
 
 impl Settings {
