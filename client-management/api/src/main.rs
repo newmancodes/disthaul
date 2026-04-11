@@ -24,9 +24,8 @@ async fn main() -> Result<()> {
 
     let settings = Settings::load().context("Failed to load configuration")?;
 
-    let telemetry_guard =
-        telemetry::init_telemetry(&settings.tls.certificate_path)
-            .context("Failed to initialise telemetry")?;
+    let telemetry_guard = telemetry::init_telemetry(&settings.tls.certificate_path)
+        .context("Failed to initialise telemetry")?;
 
     let app = Router::new()
         .route("/health", get(routes::health))
@@ -48,8 +47,7 @@ async fn main() -> Result<()> {
 
     tracing::info!("Listening on {addr}");
 
-    let server = axum_server::bind_rustls(addr, tls_config)
-        .serve(app.into_make_service());
+    let server = axum_server::bind_rustls(addr, tls_config).serve(app.into_make_service());
 
     tokio::select! {
         result = server => {
