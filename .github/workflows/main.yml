@@ -58,7 +58,9 @@ jobs:
               working-directory: ui
 
             - name: Quality - Unit Tests with Coverage
-              run: cargo llvm-cov --html --lcov --output-path lcov.info
+              run: |
+                  cargo llvm-cov --html
+                  cargo llvm-cov --lcov --output-path lcov.info --no-run
               shell: bash
               working-directory: ui
 
@@ -127,7 +129,9 @@ jobs:
               working-directory: client-management
 
             - name: Quality - Unit Tests with Coverage
-              run: cargo llvm-cov --workspace --html --lcov --output-path lcov.info
+              run: |
+                  cargo llvm-cov --workspace --html
+                  cargo llvm-cov --workspace --lcov --output-path lcov.info --no-run
               shell: bash
               working-directory: client-management
 
