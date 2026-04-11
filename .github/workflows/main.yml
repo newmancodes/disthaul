@@ -2,41 +2,49 @@ name: CI/CD
 
 on:
     push:
-        branches: [ main ]
+        branches: [main]
 
 concurrency:
-    group: ${{ github.workflow }}
+    group: ${{ github.workflow }}-${{ github.ref }}
     cancel-in-progress: false
 
 env:
     CARGO_TERM_COLOR: always
 
 jobs:
-    build-and-test:
+    build-and-test-ui:
+        name: "Build and Test: UI"
         runs-on: ubuntu-latest
 
         permissions:
-            id-token: write
             contents: read
 
         steps:
             - name: Checkout code
               uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # 6.0.2
 
-            - name: Set up .NET
-              uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # 5.2.0
+            - name: Install Rust toolchain
+              uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
               with:
-                dotnet-version: 10.x
+                  toolchain: stable
+                  components: rustfmt, clippy
+                  targets: wasm32-unknown-unknown
 
-            - name: Configure WASM tooling
-              run: |
-                rustup target add wasm32-unknown-unknown
-                rustup component add llvm-tools-preview
-                cargo install trunk wasm-bindgen-cli cargo-llvm-cov
+            - name: Cache Rust compilation
+              uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+              with:
+                  workspaces: ui -> target
+                  cache-on-failure: true
+
+            - name: Install cargo-binstall
+              uses: cargo-bins/cargo-binstall@0b24824336e2b3800b0f89d9e08b2c08bfa3dcdd # v1.17.9
+
+            - name: Install tools
+              run: cargo binstall -y trunk wasm-bindgen-cli cargo-llvm-cov cargo-audit
               shell: bash
-              
-            - name: Set up Aspire
-              run: curl -sSL https://aspire.dev/install.sh | bash
+
+            - name: Install llvm-tools-preview
+              run: rustup component add llvm-tools-preview
               shell: bash
 
             - name: Quality - Code Formatting
@@ -44,22 +52,109 @@ jobs:
               shell: bash
               working-directory: ui
 
-            - name: Quality - Unit Tests with Coverage
-              run: cargo llvm-cov --html
+            - name: Quality - Clippy Lints
+              run: cargo clippy --target wasm32-unknown-unknown -- -D warnings
               shell: bash
               working-directory: ui
 
-            - name: Upload Code Coverage Report
+            - name: Quality - Unit Tests with Coverage
+              run: cargo llvm-cov --html --lcov --output-path lcov.info
+              shell: bash
+              working-directory: ui
+
+            - name: Security - Dependency Audit
+              run: cargo audit
+              shell: bash
+              working-directory: ui
+
+            - name: Upload Coverage Report
               if: always()
               uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # 7.0.1
               with:
-                name: ui-code-coverage-report
-                path: ui/target/llvm-cov/html/
-                retention-days: 30
+                  name: ui-coverage
+                  path: |
+                      ui/target/llvm-cov/html/
+                      ui/lcov.info
+                  retention-days: 30
 
             - name: Build Application
               run: trunk build --release
               shell: bash
               working-directory: ui
 
-              
+    build-and-test-client-management:
+        name: "Build and Test: Client Management"
+        runs-on: ubuntu-latest
+
+        permissions:
+            contents: read
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # 6.0.2
+
+            - name: Install Rust toolchain
+              uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+              with:
+                  toolchain: stable
+                  components: rustfmt, clippy
+
+            - name: Cache Rust compilation
+              uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
+              with:
+                  workspaces: client-management -> target
+                  cache-on-failure: true
+
+            - name: Install cargo-binstall
+              uses: cargo-bins/cargo-binstall@0b24824336e2b3800b0f89d9e08b2c08bfa3dcdd # v1.17.9
+
+            - name: Install tools
+              run: cargo binstall -y cargo-llvm-cov cargo-audit
+              shell: bash
+
+            - name: Install llvm-tools-preview
+              run: rustup component add llvm-tools-preview
+              shell: bash
+
+            - name: Quality - Code Formatting
+              run: cargo fmt --check
+              shell: bash
+              working-directory: client-management
+
+            - name: Quality - Clippy Lints
+              run: cargo clippy --workspace -- -D warnings
+              shell: bash
+              working-directory: client-management
+
+            - name: Quality - Unit Tests with Coverage
+              run: cargo llvm-cov --workspace --html --lcov --output-path lcov.info
+              shell: bash
+              working-directory: client-management
+
+            - name: Security - Dependency Audit
+              run: cargo audit
+              shell: bash
+              working-directory: client-management
+
+            - name: Upload Coverage Report
+              if: always()
+              uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # 7.0.1
+              with:
+                  name: client-management-coverage
+                  path: |
+                      client-management/target/llvm-cov/html/
+                      client-management/lcov.info
+                  retention-days: 30
+
+    test-end-to-end:
+        name: "Test End-to-End Integration"
+        runs-on: ubuntu-latest
+        needs: [build-and-test-ui, build-and-test-client-management]
+
+        permissions:
+            contents: read
+
+        steps:
+            - name: All checks passed
+              run: echo "All resource checks passed. E2E integration tests will be added here."
+              shell: bash
