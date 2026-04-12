@@ -196,7 +196,7 @@ jobs:
               working-directory: DistHaul
 
             - name: Build Aspire AppHost
-              run: dotnet build DistHaul.sln --confiugration Release --no-restore
+              run: dotnet build DistHaul.sln --configuration Release --no-restore
 
             - name: Execute Aspire AppHost Tests
               run: dotnet test --solution .\DistHaul.sln --configuration Release --no-build --verbosity normal --results-directory .\TestResults --coverage --coverage-output-format cobertura
