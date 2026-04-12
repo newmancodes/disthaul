@@ -136,8 +136,12 @@ pub fn init_telemetry(tls_settings: &TlsSettings) -> Result<TelemetryGuard> {
 /// trusted CA root allows tonic/rustls to complete the TLS handshake with the
 /// Aspire dashboard's gRPC OTLP endpoint.
 fn build_tls_config(tls_settings: &TlsSettings) -> Result<ClientTlsConfig> {
-    let pem = std::fs::read(Path::new(&tls_settings.certificate_path))
-        .with_context(|| format!("Failed to read TLS certificate from {}", tls_settings.certificate_path))?;
+    let pem = std::fs::read(Path::new(&tls_settings.certificate_path)).with_context(|| {
+        format!(
+            "Failed to read TLS certificate from {}",
+            tls_settings.certificate_path
+        )
+    })?;
 
     let tls_config = ClientTlsConfig::new().ca_certificate(Certificate::from_pem(pem));
 
