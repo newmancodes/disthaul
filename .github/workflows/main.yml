@@ -201,6 +201,24 @@ jobs:
               working-directory: DistHaul
 
             - name: Execute Aspire AppHost Tests
+              id: test
               run: dotnet test --solution DistHaul.sln --configuration Release --no-build --verbosity normal --results-directory ./TestResults --coverage --coverage-output-format cobertura
               shell: bash
               working-directory: DistHaul
+
+            - name: Code Coverage Report
+              run: |
+                dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.5.4
+                reportgenerator -reports:TestResults/**.cobertura.xml -targetdir:coveragereport -reporttypes:Html "-filefilters:-*.g.cs" -verbosity:Warning
+                cd coveragereport
+                zip -r ../code-coverage-report.zip .
+              shell: bash
+              working-directory: DistHaul
+
+            - name: Archive Test Report
+              uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # 7.0.1
+              if: ${{ steps.test.conclusion == 'success' && always()}}
+              with:
+                name: aspire-code-coverage-report
+                path: ./DistHaul/coveragereport/
+                retention-days: 7
